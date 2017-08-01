@@ -61,7 +61,7 @@ public class ReidsMatchServlet {
             System.out.println("[doGet] Exception. failed.");
         }
         long end = System.currentTimeMillis();
-        System.out.println("-----Duration：" + (end - start) + "ms");
+//        System.out.println("-----Duration：" + (end - start) + "ms");
     }
     private static int bid(String redPacktID, String user, Jedis jedis) throws Exception {
         int flag = IDLE_OR_ERROR;
@@ -124,11 +124,16 @@ public class ReidsMatchServlet {
         }
         return redpacket;
     }
+    public static void showAllPacketsResultAndCheck(List<String> packets) {
+        for (String p : packets) {
+            showResultAndCheck(p);
+        }
+    }
     public static void showResultAndCheck(String redPacktID) {
         int allShare = 0;
         int allMoney = 0;
         Map<String, String> resultMap = RedisAPI.hgetall(redPacktID + USERMAP_SUFFIX);
-        System.out.println("-------------- Result ------------");
+        System.out.println("-------------- Result for " + redPacktID + "------------");
         for (Map.Entry<String, String> entry : resultMap.entrySet()) {
             
             String key = entry.getKey();

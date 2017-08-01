@@ -1,46 +1,87 @@
 package com.heli.mybatis.page.servlet;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
 public class Drive {
-    private static final int threadCount = 100;
+    private static final int groupChatID = 80;
+    private static final int threadCount = 200;
     private static boolean ifTestDuplicate = false;
     public static void main(String[] args) throws InterruptedException {
-        String rid = generateRedPacket(1929, 10, 1000, threadCount - 20);
-        testGetRedPacket(rid);   
-        if (ifTestDuplicate) {
-            String[] duplicateUser = {};
-            testDuplicate(rid, duplicateUser);
-        }
+        List<String> packets = generateMultipleRedPacket(-1);
+        testGetMultiRedPacket(packets);
+//        testGetMultiRedPacket(packets);
+//        if (ifTestDuplicate) {
+//            String[] duplicateUser = {};
+//            testDuplicate(rid, duplicateUser);
+//        }
         System.out.println("[main thread] get red packet finished");
-        ReidsMatchServlet.showResultAndCheck(rid);
+        ReidsMatchServlet.showAllPacketsResultAndCheck(packets);
         System.out.println("[main thread] finished");
     }
-//    static public void testGetRedPacketSingle() {
-//        ReidsMatchServlet.doGetWrapper();
-//    }
-    public static String generateRedPacket(int senderID, int groupChatID, 
-                                    int money, int share) {
-        System.out.println("[main thread] generateRedPacket");
-        ByteBuffer buf = ByteBuffer.allocate(8);
-        buf.putInt(senderID);        
-        buf.putInt(groupChatID);
-        byte[] array = buf.array();
-        byte[] sid = new byte[4];
-        
-        byte[] gcid = new byte[4];
-        System.arraycopy(array, 0, sid, 0, 4);
-        System.arraycopy(array, 4, gcid, 0, 4);
-        System.out.println("[main thread] sender ID: " + 
-                    String.valueOf(java.nio.ByteBuffer.wrap(sid).getInt()));
-        System.out.println("[main thread] groupChat ID: " + 
-                String.valueOf(java.nio.ByteBuffer.wrap(gcid).getInt()));
-        SingleRedPacket rp = new SingleRedPacket(money, share, sid, gcid);
-        System.out.println("[main thread] red Packet ID: " + rp.getIDString());
-        return rp.getIDString();
-        
+    /**
+     * Generate many red packets.
+     * @param num the number of packets
+     * @return
+     */
+    public static List<String> generateMultipleRedPacket(int num) {
+        String rid1 = generateSingleRedPacket(1000, 50, 1929, groupChatID);
+        String rid2 = generateSingleRedPacket(590, 78, 1930, groupChatID);
+        String rid3 = generateSingleRedPacket(2000, 98, 1931, groupChatID);
+        String rid4 = generateSingleRedPacket(900, 38, 1932, groupChatID);
+        String rid5 = generateSingleRedPacket(200, 78, 1933, groupChatID);
+        String rid6 = generateSingleRedPacket(800, 18, 1934, groupChatID);
+        List<String> list = new ArrayList<String>();
+        list.add(rid1);
+        list.add(rid2);
+        list.add(rid3);
+        list.add(rid4);
+        list.add(rid5);
+        list.add(rid6);
+        return list;        
     }
+    /**
+     * Generate single red packet.
+     * @param senderID
+     * @param groupChatID
+     * @param money
+     * @param share
+     * @return
+     */
+    public static String generateSingleRedPacket(int senderID, int groupChatID, 
+                                    int money, int share) {
+        SingleRedPacket rp = new SingleRedPacket(senderID, groupChatID, money, share);
+        return rp.getIDString();
+    }
+    /**
+     * Test Get Single Red Packet.
+     * @param rid
+     * @throws InterruptedException
+     */
+    static public void testGetMultiRedPacket(List<String> packets) throws InterruptedException {  
+        System.out.println("[main thread] testGetRedPacket");
+        final CountDownLatch latch = new CountDownLatch(threadCount);  
+        for(int i = 0; i < threadCount; ++i) { 
+            int temp = i;
+            Thread thread = new Thread() {  
+                public void run() {  
+                    ReidsMatchServlet.doGetWrapper(packets.get(temp * 31 % 6), String.valueOf(temp));
+                    latch.countDown();  
+                }
+            };
+//            thread.setName("thread" + i);
+            thread.start();  
+        }
+        latch.await();
+    } 
+    /**
+     * Test Get Single Red Packet.
+     * @param rid
+     * @throws InterruptedException
+     */
     static public void testGetRedPacket(String rid) throws InterruptedException {  
         System.out.println("[main thread] testGetRedPacket");
         final CountDownLatch latch = new CountDownLatch(threadCount);  
